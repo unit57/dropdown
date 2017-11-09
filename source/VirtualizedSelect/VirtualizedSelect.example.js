@@ -5,6 +5,12 @@ import 'whatwg-fetch'
 import VirtualizedSelect from './VirtualizedSelect'
 import DropdownOption from '../customComponents/DropdownOption.js'
 import styles from './VirtualizedSelect.example.css'
+// Load the full build.
+var _ = require('lodash');
+
+ 
+
+
 
 export default class VirtualizedSelectExample extends Component {
   static propTypes = {
@@ -30,10 +36,11 @@ export default class VirtualizedSelectExample extends Component {
       selectedCity: null,
       showBrands: true,
       options: [],
-      selectedIndex: 2
+      selectedIndex: 2,
+      openBrandGroupNames: []
     }
     this.handleHideBrands = this.handleHideBrands.bind(this)
-    this.handleHideBrandData = this.handleHideBrandData.bind(this)
+    this.handleToggleBrandData = this.handleToggleBrandData.bind(this)
     this._loadGithubUsers = this._loadGithubUsers.bind(this) 
     this.formattedBrandDataRenderer = this.formattedBrandDataRenderer.bind(this)
     this.manipulateDataNotStyleRenderer = this.manipulateDataNotStyleRenderer.bind(this)
@@ -71,14 +78,14 @@ export default class VirtualizedSelectExample extends Component {
             {option.name} 
           </div>
         )
-      } else if (option.type === 'affino' ){
+      } else if (option.type === 'affinio' ){
         /*//////////////////////////////////////*/
         /*///GRAY 'BRAND' OPTION IN DROP DOWN //*/
         /*//////////////////////////////////////*/
-        classNames.push(styles.affino)
-        let affinoClassNames = classNames.join(' ');
+        classNames.push(styles.affinio)
+        let affinioClassNames = classNames.join(' ');
 
-        let showBrands = (affinoClassNames + " " + option.group);
+        let showBrands = (affinioClassNames + " " + option.group);
         let hideBrands = styles.hideBrands;
   
         return (
@@ -88,12 +95,12 @@ export default class VirtualizedSelectExample extends Component {
             className={(this.state.showBrands)? showBrands : hideBrands}
             style={style}
           >
-            {option.name}<span className={styles.affinoReport}> Affino Report </span>
+            {option.name}<span className={styles.affinioReport}> affinio Report </span>
           </div>
         )
 
       } else {
-          
+          const flagImageUrl = `https://cdn.rawgit.com/hjnilsson/country-flags/9e827754/svg/${option.code.toLowerCase()}.svg`
           const classNames = [styles.countryOption];
           let showBrands = classNames.join(' ');
           let hideBrands = styles.hideBrands;
@@ -138,15 +145,15 @@ export default class VirtualizedSelectExample extends Component {
           headerRow['name'] = brandObj.groupName;
           headerRow['code'] = '';
           data.push(headerRow);
-          // create affino div
-          var affinoRow = {};
-          affinoRow['type'] = 'affino';
-          affinoRow['name'] = 'Brand';
-          affinoRow['code'] = '';
+          // create affinio div
+          var affinioRow = {};
+          affinioRow['type'] = 'affinio';
+          affinioRow['name'] = 'Brand';
+          affinioRow['code'] = '';
         
-          affinoRow['group'] = brandObj.groupName.toLowerCase().replace(' ', '-')+'-group';
+          affinioRow['group'] = brandObj.groupName.toLowerCase().replace(' ', '-')+'-group';
           if (brandObj.brands.length !== 0 ){
-          data.push(affinoRow)
+          data.push(affinioRow)
           }
           //create a row for each brand
           brandObj.brands.forEach((brand, j) => {
@@ -164,69 +171,90 @@ export default class VirtualizedSelectExample extends Component {
   }
 
 /*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
-/*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+/*/////////////////////////////////////////       Maniplate Data NOT Style!            //////////////////////////////////////////////////*/
 /*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
   
   /*///////////////////////////////////////////////////////*/
   /* ///////////////   Format Data    /////////////////////*/
   /*///////////////////////////////////////////////////////*/
 
+  // take brand data, makes an array of objects and splices in brand data for a company based on its array index
   reformatBrandData() {
+      
+      let affinio = [];
+      let newOptions = [];
 
-      const data = this.props.brandData;
+      this.props.brandData.forEach(company => {
 
-      let options = [];
+        // Create header entry for the current brand group / company
+        newOptions.push({
+          type: 'header',
+          name: company.groupName,
+          code: ''
+        });
 
-      data.forEach((option, index) => {
-          //create the header row.
-          var headerRow = {};
-          headerRow['type'] = 'header';
-          headerRow['name'] = option.groupName;
-          headerRow['code'] = '';
-          headerRow['index'] = index;
-          
-          options.push(headerRow);
+        // If this brand group / company is currently open, then we should
+        // render the brands immediately following it.
+        if (this.isBrandGroupOpen(company.groupName)) {
 
-/*          if(index === this.state.selectedIndex) {
-              var affinoRow = {};
-              affinoRow['type'] = 'affino';
-              affinoRow['name'] = 'Brand';
-              affinoRow['code'] = '';
-              options.push(affinoRow)
-          }*/
-      });
+          company.brands.forEach(companyBrand => {
+             newOptions.push({
+              type: 'country',
+              name: companyBrand.brandName,
+              code: companyBrand.countryCode,
+              flagName: companyBrand.countryName
+            });
+          });
 
-          
-
-
-      const newOptions = [].concat(options);
-      /*console.log('newOptions', newOptions)*/
-
-      let indexClicked = this.state.selectedIndex;
-
-      let brandOptions = [];
-
-      data[indexClicked].brands.map(brand => {
-          var brandRow = {};
-          brandRow['type'] = 'country';
-          brandRow['name'] = brand.brandName;
-          brandRow['code'] = brand.countryCode;
-          brandRow['flagName'] = brand.countryName;
-
-          brandOptions.push(brandRow)
+        }
       })
-      
-      newOptions.splice(indexClicked+1, 0, ...brandOptions)
-      
-      
+
       this.setState({
         options: newOptions
-      },()=>{ console.log('current options', this.state.options)});
+      });
+
+
+
+
+
+
+      /* add brand affinio report div */
+          // var affinioRow = {};
+          // affinioRow['type'] = 'affinio';
+          // affinioRow['name'] = 'Brand';
+          // affinioRow['code'] = '';
+          // affinio.push(affinioRow)
+
+
+      //     // copy options to new array 
+      //     const newOptions = [].concat(options);
+          
+      //     // get clicked comnpany name's index from it's id which is set from its index when created  
+      //     let indexClicked = this.state.selectedIndex;
+          
+      //     // get brand options 
+      //     let brandOptions = data[indexClicked].brands.map(brand => {
+      //           return {
+      //             type: 'country',
+      //             name: brand.brandName,
+      //             code: brand.countryCode,
+      //             flagName: brand.countryName
+      //           };
+      //       })
+          
+      //     newOptions.splice(indexClicked + 1, 0, ...affinio, ...brandOptions)
+          
+
+      // this.setState({
+      //   options: newOptions
+      // });
   }
   
   /*///////////////////////////////////////////////////////*/
   /* /////////////// GET INITIAL DATA /////////////////////*/
   /*///////////////////////////////////////////////////////*/
+
+  // gets just the company names when page loads
   componentWillMount(){
       const data = this.props.brandData;
 
@@ -246,22 +274,32 @@ export default class VirtualizedSelectExample extends Component {
         options: options
       });
   }
+
+  getToggledBrandGroup(brandGroupName) {
+    if (this.isBrandGroupOpen(brandGroupName)) {
+      return this.state.openBrandGroupNames.filter(aBrandGroupName => { return aBrandGroupName !== brandGroupName; });
+    } else {
+      return [...this.state.openBrandGroupNames, brandGroupName];
+    }
+  }
+
+  isBrandGroupOpen(brandGroupName) {
+    return this.state.openBrandGroupNames.includes(brandGroupName);
+  }
+
    /*//////////////////////////////////////////////////////////////*/
    /*// CHANGE DATA BASED ON CLICK for MANIPULATE DATA NOT STYLE //*/
    /*//////////////////////////////////////////////////////////////*/
-  handleHideBrandData(e){
-    console.log('name', e.target.innerHTML, 'index', e.target.id)
-  
-    
+  handleToggleBrandData(e, groupName){  
+    let parseIndex = parseInt(e.target.id)
+
+
     this.setState({
-      selectedIndex: e.target.id
+      selectedIndex: parseIndex,
+      openBrandGroupNames: this.getToggledBrandGroup(groupName)
     },()=> {this.reformatBrandData()})
-    /* I'm probably doing this wrong */
-    
-
+   
   }
-
-
 
    /*///////////////////////////////////////////////////////*/
    /*  CUSTOM OPTION RENDER for Maniplate Data NOT Style!   */
@@ -274,25 +312,26 @@ export default class VirtualizedSelectExample extends Component {
         /*////////// COMPANY NAME //////////////*/
         /*//////////////////////////////////////*/
         classNames.push(styles.nameHeader)
+        let groupName = option.name;
         return (
           <div
-            onClick={(e)=> this.handleHideBrandData(e)}
+            onClick={(e)=> this.handleToggleBrandData(e, groupName)}
             className={classNames.join(' ')}
             key={key}
             style={style}
             id = {option.index}
           >
-            {option.name} 
+            {groupName} 
           </div>
         )
-      } else if (option.type === 'affino' ){
+      } else if (option.type === 'affinio' ){
         /*//////////////////////////////////////*/
         /*///GRAY 'BRAND' OPTION IN DROP DOWN //*/
         /*//////////////////////////////////////*/
-        classNames.push(styles.affino)
-        let affinoClassNames = classNames.join(' ');
+        classNames.push(styles.affinio)
+        let affinioClassNames = classNames.join(' ');
 
-        let showBrands = (affinoClassNames + " " + option.group);
+        let showBrands = (affinioClassNames + " " + option.group);
         let hideBrands = styles.hideBrands;
   
         return (
@@ -302,7 +341,7 @@ export default class VirtualizedSelectExample extends Component {
             className={showBrands}
             style={style}
           >
-            {option.name}<span className={styles.affinoReport}> Affino Report </span>
+            {option.name}<span className={styles.affinioReport}> Affinio Report </span>
           </div>
         )
 

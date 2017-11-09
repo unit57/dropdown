@@ -27,7 +27,7 @@
   height: 40px;
   padding: 0 1rem;
   padding-left: 50px;
-  
+
 }
 .countryOptionFocused {
   background-color: rgba(0, 126, 255, 0.1);
@@ -70,14 +70,14 @@
 .nameOptionSelected {
   font-weight: bold;
 }
-.affino {
+.affinio {
   display: flex;
   justify-content: space-between;
   color: white;
   background: lightgray;
 
 }
-.affinoReport {
+.affinioReport {
 
 }
 .flagName {
