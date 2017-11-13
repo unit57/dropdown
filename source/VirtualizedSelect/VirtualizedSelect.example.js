@@ -40,58 +40,8 @@ export default class VirtualizedSelectExample extends Component {
     this.renderCompanyAndOpenBrandData();
   }
 
-  areBrandsSelected(){
-
-
-        if (!this.state.selectedBrand) {
-        //console.log('there are NO brands selected')
-/*        this.setState({
-            openBrandGroupNames: []
-        })*/
-      } else if (!!this.state.selectedBrand) {
-        //console.log('there are brands selected')
-      }
-  }
-
-
-  // check if brands are selected and sets state of selected brands
-  handleOnChange(selectedBrand){
-    //console.log('selectedBrand', selectedBrand)
-    
-    let selectedBrands = selectedBrand.split(',').map((value)=>{
-      return value.trim();
-    });
-    let openBrandGroupNames = [];
-    //console.log('selectedBrandsssssss', selectedBrands)
-    if (selectedBrands.length) {
-
-      let openBrandGroupNames = selectedBrands.map((brandName)=> {
-
-        const company = this.props.brandData.find((company)=> {
-
-            const brand = company.brands.find((brand) => {
-              return brand.brandName === brandName;
-            });
-            return !!brand;
-        });
-
-        return company.groupName;
-
-      });
-    }
-
-    
-    
-    this.setState({ 
-      selectedBrands: selectedBrands,
-      openBrandGroupNames: Array.from(new Set(openBrandGroupNames))
-    },()=> {
-      this.areBrandsSelected()
-    });
-
-  }
   
-  // take brand data, makes an array of objects and splices in brand data for a company based on its array index
+ // Render Company headers and brands if brands are open
   renderCompanyAndOpenBrandData() {
       
       let newOptions = [];
@@ -128,72 +78,110 @@ export default class VirtualizedSelectExample extends Component {
         }
       })
 
+
       this.setState({
         options: newOptions
       },()=>{this.areBrandsSelected()});
 
   }
-  
-// check if company name is in open brands state array 
-// returns true or false
- isBrandGroupOpen(brandGroupName) {
-    return this.state.openBrandGroupNames.includes(brandGroupName);
-  }
 
 
-/*  Returns a copy of the openBrandGroups object from this component's
-    state with a specified brand*/
-  
-  getToggledBrandGroup(groupName) {
-    if (this.isBrandGroupOpen(groupName)) {
-      // If the brand group is open, then we want to remove it from the array
-      // containing the names of open brand groups.
-      return this.state.openBrandGroupNames.filter(aBrandGroupName => { return aBrandGroupName !== groupName; });
-    } else {
-      // If the brand group is NOT open, then we want to add it to the
-      // array containing the names of open brand groups.
-      return [...this.state.openBrandGroupNames, groupName];
-    }
-  }
-
- 
-  // on click get the group name and set the state of openBrandGroupNames to the output of getToggledBrandGroup
-  // the run renderBrandData to render changes
+// Click on Company Name
   handleToggleBrandData(e, groupName){  
-    // console.log('current options ====>',this.state.options)
+
+    
     this.setState({
       openBrandGroupNames: this.getToggledBrandGroup(groupName)
     },()=> {this.renderCompanyAndOpenBrandData()})
    
-  }
+  }  
+    // check if company name is in open brands state array 
+    // returns true or false
+      isBrandGroupOpen(brandGroupName) {
+          return this.state.openBrandGroupNames.includes(brandGroupName);
+        }
 
-  // Run this when the user searches for a brand
-  searchBrandDataOnInputChange(e){
-        let arr = this.props.brandData;
-        
-        const searchString = e.toLowerCase();
-
-        const results = arr.filter((obj) => {
-
-        const groupMatches = obj.groupName.toLowerCase().indexOf(searchString) !== -1; //bool
-              
-
-        // console.log('group matches', obj.groupName, groupMatches)
-
-          const brands = obj.brands.filter((brand) => {
-              return brand.brandName.toLowerCase().indexOf(searchString) !== -1;
-          }); 
-
-            if (groupMatches || brands.length > 0) {
-              return true;
+        /*  Returns a copy of the openBrandGroups object from this component's
+          state with a specified brand*/
+      getToggledBrandGroup(groupName) {
+          if (this.isBrandGroupOpen(groupName)) {
+            // If the brand group is open, then we want to remove it from the array
+            // containing the names of open brand groups.
+            return this.state.openBrandGroupNames.filter(aBrandGroupName => { return aBrandGroupName !== groupName; });
+          } else {
+            // If the brand group is NOT open, then we want to add it to the
+            // array containing the names of open brand groups.
+            return [...this.state.openBrandGroupNames, groupName];
           }
-          return false;
-        });
-        
+        }
 
-        let pushOpenBrandNames = [].concat(this.state.openBrandGroupNames)
-        
-        let filteredResults = [];
+ 
+// Click (select) a brand
+  handleOnChange(selectedBrand){
+      
+      // split the selectedBrand string into an array 
+      let selectedBrands = selectedBrand.split(',').map((value)=>{
+        // remove whitespace
+        return value.trim();
+      });
+      // this will be the open group names to be rendered
+      let openBrandGroupNames = [];
+      
+      // keep names from rendering an error when a brand is displayed and the company is closed
+      if (selectedBrands.length) {
+        openBrandGroupNames = selectedBrands.map((brandName)=> {
+
+          const company = this.props.brandData.find((company)=> {
+
+              const brand = company.brands.find((brand) => {
+                return brand.brandName === brandName;
+              });
+              return !!brand;
+          });
+          // issue # 1 | delete last brand causes error: company undefined
+          return company.groupName;
+
+        });
+      } 
+
+      this.setState({ 
+        selectedBrands: selectedBrands,
+        openBrandGroupNames: Array.from(new Set(openBrandGroupNames))
+      },()=> {
+        this.areBrandsSelected()
+      });
+
+    }
+
+
+// Search 
+  searchBrandDataOnInputChange(e){
+    let brandData = this.props.brandData;
+     
+    // brand we are looking for     
+    const searchString = e.toLowerCase();
+
+          // matches to search string by company name or brand name
+          const results = brandData.filter((company) => {
+
+              // check if search is in a companies name
+              const groupMatches = company.groupName.toLowerCase().indexOf(searchString) !== -1;
+              // check if search is in the brands of a company    
+              const brands = company.brands.filter((brand) => {
+                  return brand.brandName.toLowerCase().indexOf(searchString) !== -1;
+              }); 
+              // if the search was in either the company name or brand return true 
+                if (groupMatches || brands.length > 0) {
+                  return true;
+              }
+              return false;
+            });
+
+          
+
+    //////
+ 
+/*        let filteredResults = [];
 
         results.forEach((company, index)=> {
                 filteredResults.push({
@@ -209,26 +197,54 @@ export default class VirtualizedSelectExample extends Component {
                     code: brand.countryCode,
                     flagName: brand.countryName
                   });
-                });  
-               if (pushOpenBrandNames.indexOf(company.groupName) === -1) {
-                    pushOpenBrandNames.push(company.groupName)
-                   } 
-            
-        });
+                });    
+        });*/
+    //////
+      // issue #4 | Will not render company name if search does not include company name ( will only render brands ). Even if I render new options from here.
 
-       //console.log('results =====>', pushOpenBrandNames)
-
-       //console.log('e+++>', e)
+      console.log('results=====>', results)
 
 
      
+      let resultsCompanyNames = results.map((company)=>{
+            return company.groupName;
+          });
+      // fix for #2 : keep opened brands open when searching
+      let openBrandsAndUserSearchResults = Array.from(new Set([...this.state.openBrandGroupNames, ...resultsCompanyNames]));
+      // console.log('total of open brands in state and searched ======>',openBrandsAndUserSearchResults )
       
-        this.setState({
-          options: filteredResults,
-          openBrandGroupNames: pushOpenBrandNames
-        },()=>{this.areBrandsSelected()});
-      }
 
+
+      let selectedBrands = results.map((company)=> {
+        company.brands.map((brand)=>{
+          return brand.brandName;
+        })
+      });
+      
+
+      //console.log('selectedBrands =====>',selectedBrands )
+      this.setState({
+              //options: filteredResults,
+              selectedBrands: selectedBrands,
+              openBrandGroupNames: openBrandsAndUserSearchResults,
+        }, ()=>{this.renderCompanyAndOpenBrandData()});
+    }
+
+// this may be used to close all companies
+  areBrandsSelected(){
+    // issue #3 | choose brand the close company, brand dissappears from searchbar but stays in selected brand state | log and not is here so it runs after state is updated
+    // console.log('selectedBrands', this.state.selectedBrands)
+
+    //console.log('openBrandGroupNames', this.state.openBrandGroupNames)
+        if (!this.state.selectedBrand) {
+        //console.log('there are NO brands selected')
+/*        this.setState({
+            openBrandGroupNames: []
+        })*/
+      } else if (!!this.state.selectedBrand) {
+        //console.log('there are brands selected')
+      }
+  }
 
    /*///////////////////////////////////////////////////////*/
    /*  CUSTOM OPTION RENDER for Maniplate Data NOT Style!   */
@@ -312,7 +328,7 @@ export default class VirtualizedSelectExample extends Component {
     }
 
   render () {
-    const { cityData, countryData, nameData, brandData } = this.props
+    const { brandData } = this.props
     const { selectedBrands } = this.state
     
     /*optionHeight={({ option }) => option.type === 'header' ? 35: 25}*/
