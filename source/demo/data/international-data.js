@@ -63,7 +63,7 @@ export default [
 				groupName:'New Network',
 				brands: [
 					{
-						brandName:'New Network (Global)',
+						brandName:'New Network Green (Global)',
 						countryCode: 'US',
 						countryName: 'USA'
 					},
