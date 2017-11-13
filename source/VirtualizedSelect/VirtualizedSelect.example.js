@@ -20,47 +20,20 @@ export default class VirtualizedSelectExample extends Component {
   };
   constructor (props) {
     super(props)
-    const creatableOptions = [
-      { label: 'Blue', value: '#00F' },
-      { label: 'Green', value: '#0F0' },
-      { label: 'Red', value: '#F00' }
-    ]
+
     this.state = {
-      clearable: true,
-      creatableOptions,
-      disabled: false,
-      githubUsers: [],
-      multi: false,
-      searchable: true,
-      selectedCreatable: null,
-      selectedCity: null,
-      showBrands: true,
       options: [],
-      openBrandGroupNames: []
+      openBrandGroupNames: [],
+      selectedBrands: []
     }
 
     this.handleToggleBrandData = this.handleToggleBrandData.bind(this)
     this.manipulateDataNotStyleRenderer = this.manipulateDataNotStyleRenderer.bind(this)
-    this._loadGithubUsers = this._loadGithubUsers.bind(this)
+
 
   }
-  _goToGithubUser (value) {
-    window.open(value.html_url)
-  }
 
-  _loadGithubUsers (input) {
-    return fetch(`https://api.github.com/search/users?q=${input}`)
-      .then((response) => response.json())
-      .then((json) => {
-        const githubUsers = json.items
-
-        this.setState({ githubUsers })
-
-        return { options: githubUsers }
-      })
-  }
   
-
 
   // gets just the company names when page loads
   componentWillMount(){
@@ -68,21 +41,54 @@ export default class VirtualizedSelectExample extends Component {
   }
 
   areBrandsSelected(){
+
+
         if (!this.state.selectedBrand) {
-        console.log('there are NO brands selected')
+        //console.log('there are NO brands selected')
 /*        this.setState({
             openBrandGroupNames: []
         })*/
       } else if (!!this.state.selectedBrand) {
-        console.log('there are brands selected')
+        //console.log('there are brands selected')
       }
   }
 
 
   // check if brands are selected and sets state of selected brands
   handleOnChange(selectedBrand){
-    // this.areBrandsSelected()
-    this.setState({ selectedBrand },()=>{()=>{this.areBrandsSelected()}})
+    //console.log('selectedBrand', selectedBrand)
+    
+    let selectedBrands = selectedBrand.split(',').map((value)=>{
+      return value.trim();
+    });
+    let openBrandGroupNames = [];
+    //console.log('selectedBrandsssssss', selectedBrands)
+    if (selectedBrands.length) {
+
+      let openBrandGroupNames = selectedBrands.map((brandName)=> {
+
+        const company = this.props.brandData.find((company)=> {
+
+            const brand = company.brands.find((brand) => {
+              return brand.brandName === brandName;
+            });
+            return !!brand;
+        });
+
+        return company.groupName;
+
+      });
+    }
+
+    
+    
+    this.setState({ 
+      selectedBrands: selectedBrands,
+      openBrandGroupNames: Array.from(new Set(openBrandGroupNames))
+    },()=> {
+      this.areBrandsSelected()
+    });
+
   }
   
   // take brand data, makes an array of objects and splices in brand data for a company based on its array index
@@ -307,7 +313,7 @@ export default class VirtualizedSelectExample extends Component {
 
   render () {
     const { cityData, countryData, nameData, brandData } = this.props
-    const { clearable, creatableOptions, disabled, githubUsers, multi, searchable, selectedCity, selectedCountry, selectedCreatable, selectedGithubUser, selectedName, selectedBrand } = this.state
+    const { selectedBrands } = this.state
     
     /*optionHeight={({ option }) => option.type === 'header' ? 35: 25}*/
     // optionRenderer={this.manipulateDataNotStyleRenderer}
@@ -331,32 +337,12 @@ export default class VirtualizedSelectExample extends Component {
             ref={(ref) => this._customOptionHeightsSelect = ref}
             searchable={true}
             simpleValue
-            value={selectedBrand}
+            value={selectedBrands}
             valueKey='name'
             multi={true}
           />
 
 
-        <h4 className={styles.header}>
-          Async Options
-        </h4>
-
-        <div className={styles.description}>
-          Displays an async <code>Select</code> component wired up to search for GitHub users.
-        </div>
-
-        <VirtualizedSelect
-          async
-          backspaceRemoves={false}
-          labelKey='login'
-          loadOptions={this._loadGithubUsers}
-          minimumInput={1}
-          onChange={(selectedGithubUser) => this.setState({ selectedGithubUser })}
-          onValueClick={this._goToGithubUser}
-          options={githubUsers}
-          value={selectedGithubUser}
-          valueKey='id'
-        />
       </div>
     )
   }
