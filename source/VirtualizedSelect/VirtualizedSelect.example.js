@@ -22,13 +22,12 @@ export default class VirtualizedSelectExample extends Component {
     super(props)
 
     this.state = {
-      options: [],
       openBrandGroupNames: [],
       selectedBrands: []
     }
 
     this.handleToggleBrandData = this.handleToggleBrandData.bind(this)
-    this.manipulateDataNotStyleRenderer = this.manipulateDataNotStyleRenderer.bind(this)
+    this.nestedSelectOptions = this.nestedSelectOptions.bind(this)
 
 
   }
@@ -39,7 +38,6 @@ export default class VirtualizedSelectExample extends Component {
   componentWillMount(){
     this.renderCompanyAndOpenBrandData();
   }
-
   
  // Render Company headers and brands if brands are open
   renderCompanyAndOpenBrandData() {
@@ -78,57 +76,59 @@ export default class VirtualizedSelectExample extends Component {
         }
       })
 
-
-      this.setState({
-        options: newOptions
-      },()=>{this.areBrandsSelected()});
-
+      return newOptions;
   }
 
 
 // Click on Company Name
   handleToggleBrandData(e, groupName){  
-
-    
     this.setState({
       openBrandGroupNames: this.getToggledBrandGroup(groupName)
-    },()=> {this.renderCompanyAndOpenBrandData()})
+    })
    
   }  
-    // check if company name is in open brands state array 
-    // returns true or false
-      isBrandGroupOpen(brandGroupName) {
-          return this.state.openBrandGroupNames.includes(brandGroupName);
-        }
 
-        /*  Returns a copy of the openBrandGroups object from this component's
-          state with a specified brand*/
-      getToggledBrandGroup(groupName) {
-          if (this.isBrandGroupOpen(groupName)) {
-            // If the brand group is open, then we want to remove it from the array
-            // containing the names of open brand groups.
-            return this.state.openBrandGroupNames.filter(aBrandGroupName => { return aBrandGroupName !== groupName; });
-          } else {
-            // If the brand group is NOT open, then we want to add it to the
-            // array containing the names of open brand groups.
-            return [...this.state.openBrandGroupNames, groupName];
-          }
-        }
+// check if company name is in open brands state array 
+// returns true or false
+  isBrandGroupOpen(brandGroupName) {
+    console.log('is open?', brandGroupName, this.state.openBrandGroupNames, this.state.openBrandGroupNames.includes(brandGroupName));
+      return this.state.openBrandGroupNames.includes(brandGroupName);
+    }
+
+    /*  Returns a copy of the openBrandGroups object from this component's
+      state with a specified brand*/
+  getToggledBrandGroup(groupName) {
+      if (this.isBrandGroupOpen(groupName)) {
+        // If the brand group is open, then we want to remove it from the array
+        // containing the names of open brand groups.
+        return this.state.openBrandGroupNames.filter(aBrandGroupName => { return aBrandGroupName !== groupName; });
+      } else {
+        // If the brand group is NOT open, then we want to add it to the
+        // array containing the names of open brand groups.
+        return [...this.state.openBrandGroupNames, groupName];
+      }
+    }
 
  
 // Click (select) a brand
+// this function intally took the selected brand from a click and set the selected brand state to the value of the clicked selected brand
   handleOnChange(selectedBrand){
       
+      //console.log('selectedBrand', selectedBrand);
       // split the selectedBrand string into an array 
       let selectedBrands = selectedBrand.split(',').map((value)=>{
         // remove whitespace
         return value.trim();
+      }).filter((value) => {
+          return !!value;
       });
+      //console.log('selectedBrands', selectedBrands);
       // this will be the open group names to be rendered
       let openBrandGroupNames = [];
       
-      // keep names from rendering an error when a brand is displayed and the company is closed
+      // keep names from rendering an error when a brand is displayed and the company is closed | error is still occuring 
       if (selectedBrands.length) {
+
         openBrandGroupNames = selectedBrands.map((brandName)=> {
 
           const company = this.props.brandData.find((company)=> {
@@ -138,104 +138,61 @@ export default class VirtualizedSelectExample extends Component {
               });
               return !!brand;
           });
-          // issue # 1 | delete last brand causes error: company undefined
+          // issue #1 | delete last brand causes error: company undefined
           return company.groupName;
 
         });
       } 
-
+    
+    // issue #3 | choose brand the close company, brand dissappears from searchbar
       this.setState({ 
         selectedBrands: selectedBrands,
         openBrandGroupNames: Array.from(new Set(openBrandGroupNames))
-      },()=> {
-        this.areBrandsSelected()
       });
 
     }
 
 
 // Search 
-  searchBrandDataOnInputChange(e){
+  searchBrandDataOnInputChange(searchString) {
+
     let brandData = this.props.brandData;
+    let openBrandGroupNames = [].concat(this.state.openBrandGroupNames);
      
     // brand we are looking for     
-    const searchString = e.toLowerCase();
+    searchString = searchString.toLowerCase().trim();
 
-          // matches to search string by company name or brand name
-          const results = brandData.filter((company) => {
+    if (searchString) {
 
-              // check if search is in a companies name
-              const groupMatches = company.groupName.toLowerCase().indexOf(searchString) !== -1;
-              // check if search is in the brands of a company    
-              const brands = company.brands.filter((brand) => {
-                  return brand.brandName.toLowerCase().indexOf(searchString) !== -1;
-              }); 
-              // if the search was in either the company name or brand return true 
-                if (groupMatches || brands.length > 0) {
-                  return true;
-              }
-              return false;
-            });
+      openBrandGroupNames = brandData.filter((company) => {
 
-          
+          // check if search is in a companies name
+          const groupMatches = company.groupName.toLowerCase().indexOf(searchString) !== -1;
+          // check if search is in the brands of a company OR is already selected   
+          const brands = company.brands.filter((brand) => {
 
-    //////
- 
-/*        let filteredResults = [];
-
-        results.forEach((company, index)=> {
-                filteredResults.push({
-                  type: 'header',
-                  name: company.groupName,
-                  code: ''
-                });
-
-                  company.brands.forEach(brand => {
-                   filteredResults.push({
-                    type: 'country',
-                    name: brand.brandName,
-                    code: brand.countryCode,
-                    flagName: brand.countryName
-                  });
-                });    
-        });*/
-    //////
-      // issue #4 | Will not render company name if search does not include company name ( will only render brands ). Even if I render new options from here.
-
-      console.log('results=====>', results)
-
-
-     
-      let resultsCompanyNames = results.map((company)=>{
-            return company.groupName;
-          });
-      // fix for #2 : keep opened brands open when searching
-      let openBrandsAndUserSearchResults = Array.from(new Set([...this.state.openBrandGroupNames, ...resultsCompanyNames]));
-      // console.log('total of open brands in state and searched ======>',openBrandsAndUserSearchResults )
-      
-
-
-      let selectedBrands = results.map((company)=> {
-        company.brands.map((brand)=>{
-          return brand.brandName;
-        })
-      });
-      
-
-      //console.log('selectedBrands =====>',selectedBrands )
-      this.setState({
-              //options: filteredResults,
-              selectedBrands: selectedBrands,
-              openBrandGroupNames: openBrandsAndUserSearchResults,
-        }, ()=>{this.renderCompanyAndOpenBrandData()});
+              return brand.brandName.toLowerCase().indexOf(searchString) !== -1 || this.state.selectedBrands.includes(brand.brandName);
+          }); 
+          // if the search was in either the company name or brand return true 
+            if (groupMatches || brands.length > 0) {
+              return true;
+          }
+          return false;
+        }).map(company => company.groupName);
     }
 
-// this may be used to close all companies
+      
+
+      this.setState({
+              openBrandGroupNames: Array.from(new Set(openBrandGroupNames)),
+        });
+    }
+
+// functions I was trying to make close companies when search bar is empty
   areBrandsSelected(){
-    // issue #3 | choose brand the close company, brand dissappears from searchbar but stays in selected brand state | log and not is here so it runs after state is updated
     // console.log('selectedBrands', this.state.selectedBrands)
 
-    //console.log('openBrandGroupNames', this.state.openBrandGroupNames)
+    // console.log('#3openBrandGroupNames', this.state.openBrandGroupNames)
         if (!this.state.selectedBrand) {
         //console.log('there are NO brands selected')
 /*        this.setState({
@@ -245,11 +202,20 @@ export default class VirtualizedSelectExample extends Component {
         //console.log('there are brands selected')
       }
   }
+/*
+  emptyOpenBrandGroupNames() {
+    if (this.state.selectedBrands === [] && e.value === ''){
+      this.setState({
+        openBrandGroupNames: []
+      })
+    }
+
+  }*/
 
    /*///////////////////////////////////////////////////////*/
    /*  CUSTOM OPTION RENDER for Maniplate Data NOT Style!   */
    /*///////////////////////////////////////////////////////*/
-  manipulateDataNotStyleRenderer({ focusedOption, focusedOptionIndex, focusOption, key, labelKey, option, optionIndex, options, selectValue, style, valueArray }) {
+  nestedSelectOptions({ focusedOption, focusedOptionIndex, focusOption, key, labelKey, option, optionIndex, options, selectValue, style, valueArray }) {
       const classNames = [styles.nameOption]
 
       if (option.type === 'header') {
@@ -332,8 +298,14 @@ export default class VirtualizedSelectExample extends Component {
     const { selectedBrands } = this.state
     
     /*optionHeight={({ option }) => option.type === 'header' ? 35: 25}*/
-    // optionRenderer={this.manipulateDataNotStyleRenderer}
+    // optionRenderer={this.nestedSelectOptions}
 
+      // #5 Deleting a search is the same as searching the first letter in the search. Whatever is the last remaing letter of a search even after deleted stays as the last search query. 
+      // So if the last search is 'Turner' then when you delete it, it will behave as if you searched 'T' ans render those results. If I give it a condition to be blank if the input is empty it will clear when deleting 
+      // all characters, but it wont add a option when selected
+      // maybe add a condition to onChange? but need to fix issue #1 to test
+
+      // console.log('state', this.state);
     return (
       <div>
      {/* {console.log('selectedBrand=====>', selectedBrand)}*/}
@@ -343,13 +315,13 @@ export default class VirtualizedSelectExample extends Component {
           <VirtualizedSelect
             labelKey='name'
             
-            onChange={(selectedBrand) => {this.handleOnChange(selectedBrand)}}
+            onChange={(selectedBrand) => {this.handleOnChange(selectedBrand) }}
             
-            onInputChange={(e) => {(e !== '') ? this.searchBrandDataOnInputChange(e) : this.renderCompanyAndOpenBrandData() }}
+            onInputChange={(searchString) => {this.searchBrandDataOnInputChange(searchString)}}
             
-            optionRenderer={this.manipulateDataNotStyleRenderer}
+            optionRenderer={this.nestedSelectOptions}
             optionHeight={({ option }) => option.type === 'header' ? 35: 25}
-            options={this.state.options}
+            options={this.renderCompanyAndOpenBrandData()}
             ref={(ref) => this._customOptionHeightsSelect = ref}
             searchable={true}
             simpleValue
