@@ -23,47 +23,35 @@ export default class VirtualizedSelectExample extends Component {
 
     this.state = {
       openBrandGroupNames: [],
-      selectedBrands: []
+      selectedBrands: [],
+      searchString: ''
     }
-
     this.handleToggleBrandData = this.handleToggleBrandData.bind(this)
-    this.nestedSelectOptions = this.nestedSelectOptions.bind(this)
-
-
+    this.customSelectOptions = this.customSelectOptions.bind(this)
   }
-
-  
-
   // gets just the company names when page loads
   componentWillMount(){
     this.renderCompanyAndOpenBrandData();
   }
-  
  // Render Company headers and brands if brands are open
   renderCompanyAndOpenBrandData() {
-      
       let newOptions = [];
-
       this.props.brandData.forEach(company => {
-
         // Create header entry for the current brand group / company
         newOptions.push({
           type: 'header',
           name: company.groupName,
           code: ''
         });
-
         // If this brand group / company is currently open, then we should
         // render the brands immediately following it.
         if (this.isBrandGroupOpen(company.groupName)) {
-          
           // add brand affinio report div
           newOptions.push({
             type: 'affinio',
             name: 'Brand',
             code: ''
           })
-
           company.brands.forEach(brand => {
              newOptions.push({
               type: 'country',
@@ -75,11 +63,8 @@ export default class VirtualizedSelectExample extends Component {
 
         }
       })
-
       return newOptions;
   }
-
-
 // Click on Company Name
   handleToggleBrandData(e, groupName){  
     this.setState({
@@ -87,14 +72,12 @@ export default class VirtualizedSelectExample extends Component {
     })
    
   }  
-
-// check if company name is in open brands state array 
-// returns true or false
+  // check if company name is in open brands state array 
+  // returns true or false
   isBrandGroupOpen(brandGroupName) {
-    console.log('is open?', brandGroupName, this.state.openBrandGroupNames, this.state.openBrandGroupNames.includes(brandGroupName));
+    //console.log('is open?', brandGroupName, this.state.openBrandGroupNames, this.state.openBrandGroupNames.includes(brandGroupName));
       return this.state.openBrandGroupNames.includes(brandGroupName);
     }
-
     /*  Returns a copy of the openBrandGroups object from this component's
       state with a specified brand*/
   getToggledBrandGroup(groupName) {
@@ -108,13 +91,8 @@ export default class VirtualizedSelectExample extends Component {
         return [...this.state.openBrandGroupNames, groupName];
       }
     }
-
- 
 // Click (select) a brand
-// this function intally took the selected brand from a click and set the selected brand state to the value of the clicked selected brand
   handleOnChange(selectedBrand){
-      
-      //console.log('selectedBrand', selectedBrand);
       // split the selectedBrand string into an array 
       let selectedBrands = selectedBrand.split(',').map((value)=>{
         // remove whitespace
@@ -122,34 +100,26 @@ export default class VirtualizedSelectExample extends Component {
       }).filter((value) => {
           return !!value;
       });
-      //console.log('selectedBrands', selectedBrands);
       // this will be the open group names to be rendered
       let openBrandGroupNames = [];
-      
-      // keep names from rendering an error when a brand is displayed and the company is closed | error is still occuring 
+      // keep names from rendering an error when a brand is displayed and the company is closed
       if (selectedBrands.length) {
-
         openBrandGroupNames = selectedBrands.map((brandName)=> {
-
           const company = this.props.brandData.find((company)=> {
-
               const brand = company.brands.find((brand) => {
                 return brand.brandName === brandName;
               });
               return !!brand;
           });
-          // issue #1 | delete last brand causes error: company undefined
           return company.groupName;
-
         });
       } 
-    
-    // issue #3 | choose brand the close company, brand dissappears from searchbar
       this.setState({ 
         selectedBrands: selectedBrands,
         openBrandGroupNames: Array.from(new Set(openBrandGroupNames))
       });
 
+      return selectedBrand;
     }
 
 
@@ -179,43 +149,19 @@ export default class VirtualizedSelectExample extends Component {
           }
           return false;
         }).map(company => company.groupName);
-    }
-
-      
-
+    }  
       this.setState({
               openBrandGroupNames: Array.from(new Set(openBrandGroupNames)),
+              searchString: searchString
         });
     }
 
-// functions I was trying to make close companies when search bar is empty
-  areBrandsSelected(){
-    // console.log('selectedBrands', this.state.selectedBrands)
 
-    // console.log('#3openBrandGroupNames', this.state.openBrandGroupNames)
-        if (!this.state.selectedBrand) {
-        //console.log('there are NO brands selected')
-/*        this.setState({
-            openBrandGroupNames: []
-        })*/
-      } else if (!!this.state.selectedBrand) {
-        //console.log('there are brands selected')
-      }
-  }
-/*
-  emptyOpenBrandGroupNames() {
-    if (this.state.selectedBrands === [] && e.value === ''){
-      this.setState({
-        openBrandGroupNames: []
-      })
-    }
-
-  }*/
 
    /*///////////////////////////////////////////////////////*/
    /*  CUSTOM OPTION RENDER for Maniplate Data NOT Style!   */
    /*///////////////////////////////////////////////////////*/
-  nestedSelectOptions({ focusedOption, focusedOptionIndex, focusOption, key, labelKey, option, optionIndex, options, selectValue, style, valueArray }) {
+  customSelectOptions({ focusedOption, focusedOptionIndex, focusOption, key, labelKey, option, optionIndex, options, selectValue, style, valueArray }) {
       const classNames = [styles.nameOption]
 
       if (option.type === 'header') {
@@ -246,7 +192,6 @@ export default class VirtualizedSelectExample extends Component {
         let hideBrands = styles.hideBrands;
   
         return (
-        
           <div
             key={key}
             className={showBrands}
@@ -290,36 +235,26 @@ export default class VirtualizedSelectExample extends Component {
           </div>
         )
       }
-
     }
+
+
 
   render () {
     const { brandData } = this.props
     const { selectedBrands } = this.state
     
-    /*optionHeight={({ option }) => option.type === 'header' ? 35: 25}*/
-    // optionRenderer={this.nestedSelectOptions}
 
-      // #5 Deleting a search is the same as searching the first letter in the search. Whatever is the last remaing letter of a search even after deleted stays as the last search query. 
-      // So if the last search is 'Turner' then when you delete it, it will behave as if you searched 'T' ans render those results. If I give it a condition to be blank if the input is empty it will clear when deleting 
-      // all characters, but it wont add a option when selected
-      // maybe add a condition to onChange? but need to fix issue #1 to test
-
-      // console.log('state', this.state);
     return (
       <div>
-     {/* {console.log('selectedBrand=====>', selectedBrand)}*/}
           <h4 className={styles.header}>
             Manipulate Data NOT Style!
           </h4>
           <VirtualizedSelect
             labelKey='name'
-            
             onChange={(selectedBrand) => {this.handleOnChange(selectedBrand) }}
-            
             onInputChange={(searchString) => {this.searchBrandDataOnInputChange(searchString)}}
-            
-            optionRenderer={this.nestedSelectOptions}
+            closeOnSelect={false}
+            optionRenderer={this.customSelectOptions}
             optionHeight={({ option }) => option.type === 'header' ? 35: 25}
             options={this.renderCompanyAndOpenBrandData()}
             ref={(ref) => this._customOptionHeightsSelect = ref}
@@ -329,8 +264,6 @@ export default class VirtualizedSelectExample extends Component {
             valueKey='name'
             multi={true}
           />
-
-
       </div>
     )
   }
