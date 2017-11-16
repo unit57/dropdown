@@ -104,11 +104,8 @@ export default class VirtualizedSelectExample extends Component {
 // Click (select) a brand
   handleOnChange(selectedBrand){
       // split the selectedBrand string into an array 
-      let selectedBrands = selectedBrand.split(',').map((value)=>{
-        // remove whitespace
-        return value.trim();
-      }).filter((value) => {
-          return !!value;
+      let selectedBrands = selectedBrand.map((value) => {
+          return value.name
       });
       // this will be the open group names to be rendered
       let openBrandGroupNames = [];
@@ -212,7 +209,7 @@ export default class VirtualizedSelectExample extends Component {
             className={showBrands}
             style={style}
           >
-            {option.name}<span className={styles.affinioReport}> Affinio Report </span>
+            {option.name}<span className={styles.affinioReport}> Tribes Report </span>
           </div>
         )
 
@@ -274,7 +271,6 @@ export default class VirtualizedSelectExample extends Component {
             options={this.renderCompanyAndOpenBrandData()}
             ref={(ref) => this._customOptionHeightsSelect = ref}
             searchable={true}
-            simpleValue
             value={selectedBrands}
             valueKey='name'
             multi={true}
