@@ -24,7 +24,8 @@ export default class VirtualizedSelectExample extends Component {
     this.state = {
       openBrandGroupNames: [],
       selectedBrands: [],
-      searchString: ''
+      searchString: '',
+      companiesWithOpenBrands:[]
     }
     this.handleToggleBrandData = this.handleToggleBrandData.bind(this)
     this.customSelectOptions = this.customSelectOptions.bind(this)
@@ -66,7 +67,8 @@ export default class VirtualizedSelectExample extends Component {
       return newOptions;
   }
 // Click on Company Name
-  handleToggleBrandData(e, groupName){  
+  handleToggleBrandData(e, groupName){ 
+
     this.setState({
       openBrandGroupNames: this.getToggledBrandGroup(groupName)
     })
@@ -81,7 +83,7 @@ export default class VirtualizedSelectExample extends Component {
     /*  Returns a copy of the openBrandGroups object from this component's
       state with a specified brand*/
   getToggledBrandGroup(groupName) {
-      if (this.isBrandGroupOpen(groupName)) {
+      if (this.isBrandGroupOpen(groupName) && this.noOpenBrands(groupName)) {
         // If the brand group is open, then we want to remove it from the array
         // containing the names of open brand groups.
         return this.state.openBrandGroupNames.filter(aBrandGroupName => { return aBrandGroupName !== groupName; });
@@ -91,6 +93,14 @@ export default class VirtualizedSelectExample extends Component {
         return [...this.state.openBrandGroupNames, groupName];
       }
     }
+    noOpenBrands(groupName){
+      if(this.state.companiesWithOpenBrands.includes(groupName)){
+        return false;
+      }else{
+        return true;
+      }
+    }
+
 // Click (select) a brand
   handleOnChange(selectedBrand){
       // split the selectedBrand string into an array 
@@ -102,6 +112,7 @@ export default class VirtualizedSelectExample extends Component {
       });
       // this will be the open group names to be rendered
       let openBrandGroupNames = [];
+
       // keep names from rendering an error when a brand is displayed and the company is closed
       if (selectedBrands.length) {
         openBrandGroupNames = selectedBrands.map((brandName)=> {
@@ -114,9 +125,13 @@ export default class VirtualizedSelectExample extends Component {
           return company.groupName;
         });
       } 
+      // open groupBrandGroupNames will set a state that is also set in search and clicking on a company name.
+      // companiesWithOpenBrands is only set here. 
+      let companiesWithOpenBrands = [].concat(openBrandGroupNames);
       this.setState({ 
         selectedBrands: selectedBrands,
-        openBrandGroupNames: Array.from(new Set(openBrandGroupNames))
+        openBrandGroupNames: Array.from(new Set(openBrandGroupNames)),
+        companiesWithOpenBrands: companiesWithOpenBrands
       });
 
       return selectedBrand;
