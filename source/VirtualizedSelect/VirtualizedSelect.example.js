@@ -144,7 +144,7 @@ export default class VirtualizedSelectExample extends Component {
     // brand we are looking for     
     searchString = searchString.toLowerCase().trim();
 
-    if (searchString) {
+    if (searchString.length >=1) {
 
       openBrandGroupNames = brandData.filter((company) => {
 
@@ -161,13 +161,16 @@ export default class VirtualizedSelectExample extends Component {
           }
           return false;
         }).map(company => company.groupName);
-    }  
+    } 
+    // When a user deletes a search querry only companies with selected brands will remain open
+    if (searchString.length === 0 ) {
+      openBrandGroupNames = this.state.companiesWithOpenBrands;
+    }
       this.setState({
               openBrandGroupNames: Array.from(new Set(openBrandGroupNames)),
               searchString: searchString
         });
     }
-
 
 
    /*///////////////////////////////////////////////////////*/
